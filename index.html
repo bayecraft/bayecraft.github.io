@@ -538,7 +538,7 @@ function copyIP() {
 // ========== SERVER STATUS ==========
 async function checkServerStatus() {
   try {
-    const res = await fetch('https://api.mcsrvstat.us/bedrock/3/bayecraft.duckdns.org:19182');
+    const res = await fetch('https://api.mcsrvstat.us/bedrock/3/bayecraft.duckdns.org:27508');
     const data = await res.json();
     const dot = document.getElementById('statusDot');
     const text = document.getElementById('statusText');
