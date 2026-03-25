@@ -233,7 +233,7 @@
       </div><!-- Server IP Card -->
       <div class="inline-block card-glow rounded-2xl px-6 py-4 mb-8 animate-fade-in-up stagger-3">
        <p class="text-[9px] font-pixel text-gray-400 mb-2">SERVER ADDRESS</p>
-       <div class="flex items-center gap-3 flex-wrap justify-center"><span class="font-pixel text-mc-green text-[10px] sm:text-xs" id="heroIP">bayecraft.duckdns.org</span> <span class="text-gray-600">|</span> <span class="font-pixel text-mc-gold text-[10px] sm:text-xs">Port: <span id="heroPort">19182</span></span> <button onclick="copyIP()" class="ml-2 w-8 h-8 rounded-lg bg-mc-green/20 flex items-center justify-center hover:bg-mc-green/30 transition-colors" title="Copy IP"> <i data-lucide="copy" class="w-4 h-4 text-mc-green"></i> </button>
+       <div class="flex items-center gap-3 flex-wrap justify-center"><span class="font-pixel text-mc-green text-[10px] sm:text-xs" id="heroIP">bayecraft.duckdns.org</span> <span class="text-gray-600">|</span> <span class="font-pixel text-mc-gold text-[10px] sm:text-xs">Port: <span id="heroPort">27508</span></span> <button onclick="copyIP()" class="ml-2 w-8 h-8 rounded-lg bg-mc-green/20 flex items-center justify-center hover:bg-mc-green/30 transition-colors" title="Copy IP"> <i data-lucide="copy" class="w-4 h-4 text-mc-green"></i> </button>
        </div>
       </div><!-- Action Buttons -->
       <div class="flex flex-wrap justify-center gap-3 mb-10 animate-fade-in-up stagger-4"><a href="https://chat.whatsapp.com/BxUz7cddkweGopBONhsclx" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white font-bold px-5 py-3 rounded-xl transition-all text-sm">
@@ -406,7 +406,7 @@ const defaultConfig = {
   server_name: 'BayeCraft',
   tagline: 'BayeCraft adalah server survival santai dengan banyak fitur custom yang bikin gameplay lebih seru dan nggak ngebosenin. Cocok buat yang mau main survival bareng temen, eksplor dunia, koleksi gear kuat, dan nikmatin fitur unik yang nggak ada di server biasa.',
   server_ip: 'bayecraft.duckdns.org',
-  server_port: '19182',
+  server_port: '27508',
   background_color: '#0a0e17',
   surface_color: '#141a2a',
   text_color: '#e8e0d4',
@@ -527,7 +527,7 @@ function toggleSidebar() {
 }
 function copyIP() {
   const ip = document.getElementById('heroIP')?.textContent || 'bayecraft.duckdns.org';
-  const port = document.getElementById('heroPort')?.textContent || '19182';
+  const port = document.getElementById('heroPort')?.textContent || '27508';
   navigator.clipboard.writeText(ip + ':' + port).then(() => {
     const t = document.getElementById('copyToast');
     t.classList.add('show');
