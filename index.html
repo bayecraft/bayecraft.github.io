@@ -1,0 +1,793 @@
+<!doctype html>
+<html lang="id" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BayeCraft Server</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;family=Rajdhani:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 5px rgba(34,197,94,.3)}50%{box-shadow:0 0 20px rgba(34,197,94,.6)}}
+@keyframes slideIn{from{transform:translateX(-100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.font-pixel{font-family:'Press Start 2P',monospace}
+.font-body{font-family:'Rajdhani',sans-serif}
+.float-anim{animation:float 3s ease-in-out infinite}
+.pulse-glow{animation:pulse-glow 2s ease-in-out infinite}
+.fade-in{animation:fadeIn .5s ease forwards}
+.slide-in{animation:slideIn .3s ease forwards}
+.card-hover{transition:all .3s ease}
+.card-hover:hover{transform:translateY(-4px);box-shadow:0 8px 30px rgba(0,0,0,.4)}
+.shimmer-bg{background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);background-size:200% 100%;animation:shimmer 3s infinite}
+.scrollbar-hide::-webkit-scrollbar{display:none}
+.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
+.toast-show{animation:fadeIn .3s ease forwards}
+.minecraft-border{border:3px solid #555;box-shadow:inset 0 0 0 2px #333,inset 0 0 0 3px #1a1a1a,0 4px 12px rgba(0,0,0,.5)}
+.sidebar-overlay{background:rgba(0,0,0,.6);backdrop-filter:blur(2px)}
+html,body{height:100%;margin:0;padding:0}
+</style>
+  <script>
+tailwind.config={theme:{extend:{colors:{mc:{dark:'#1a1a2e',darker:'#0f0f1a',mid:'#16213e',accent:'#4ade80',gold:'#fbbf24',purple:'#a855f7',red:'#ef4444',blue:'#3b82f6',surface:'#1e2a4a'}}}}};
+</script>
+  <style>body { box-sizing: border-box; }</style>
+ </head>
+ <body class="h-full bg-mc-darker text-gray-100 font-body overflow-auto">
+  <!-- Toast -->
+  <div id="toast" class="fixed top-4 right-4 z-[200] hidden">
+   <div class="bg-mc-surface border border-mc-accent/30 rounded-lg px-4 py-3 shadow-xl flex items-center gap-2">
+    <i data-lucide="check-circle" class="w-5 h-5 text-mc-accent"></i> <span id="toast-msg" class="font-body text-sm text-gray-200"></span>
+   </div>
+  </div><!-- Sidebar Overlay -->
+  <div id="sidebar-overlay" class="fixed inset-0 z-40 sidebar-overlay hidden" onclick="toggleSidebar()"></div><!-- Sidebar -->
+  <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-mc-dark border-r border-gray-700/50 z-50 transform -translate-x-full transition-transform duration-300 flex flex-col">
+   <div class="p-4 border-b border-gray-700/50 flex items-center gap-3">
+    <img src="https://i.imgur.com/lBdyggA.png" alt="BayeCraft" class="w-10 h-10 rounded" loading="lazy" onerror="this.style.background='#4ade80';this.alt='BC';"> <span class="font-pixel text-mc-accent text-xs">BayeCraft</span> <button onclick="toggleSidebar()" class="ml-auto p-1 hover:bg-mc-mid rounded"><i data-lucide="x" class="w-5 h-5"></i></button>
+   </div>
+   <nav class="flex-1 p-3 space-y-1 overflow-auto scrollbar-hide">
+    <a onclick="navigateTo('home');toggleSidebar()" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-mc-mid cursor-pointer transition-colors"> <i data-lucide="home" class="w-4 h-4 text-mc-accent"></i><span class="text-sm font-semibold">Home</span> </a>
+    <div>
+     <button onclick="document.getElementById('store-sub').classList.toggle('hidden')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-mc-mid cursor-pointer transition-colors"> <i data-lucide="shopping-bag" class="w-4 h-4 text-mc-gold"></i><span class="text-sm font-semibold">Store</span> <i data-lucide="chevron-down" class="w-3 h-3 ml-auto"></i> </button>
+     <div id="store-sub" class="hidden ml-7 mt-1 space-y-1">
+      <a onclick="navigateTo('ranks');toggleSidebar()" class="block px-3 py-1.5 text-sm rounded hover:bg-mc-mid cursor-pointer text-gray-300 hover:text-white">Rank List</a> <a onclick="navigateTo('topup');toggleSidebar()" class="block px-3 py-1.5 text-sm rounded hover:bg-mc-mid cursor-pointer text-gray-300 hover:text-white">Top Up Money</a> <a onclick="navigateTo('custom');toggleSidebar()" class="block px-3 py-1.5 text-sm rounded hover:bg-mc-mid cursor-pointer text-gray-300 hover:text-white">Custom Rank</a>
+     </div>
+    </div><a onclick="navigateTo('contact');toggleSidebar()" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-mc-mid cursor-pointer transition-colors"> <i data-lucide="mail" class="w-4 h-4 text-mc-blue"></i><span class="text-sm font-semibold">Contact</span> </a>
+   </nav>
+   <div class="p-3 border-t border-gray-700/50">
+    <div id="sidebar-login-status" class="text-xs text-gray-400 text-center"></div>
+   </div>
+  </aside><!-- Main Wrapper -->
+  <div id="app-wrapper" class="w-full h-full overflow-auto scrollbar-hide">
+   <!-- Navbar -->
+   <nav class="sticky top-0 z-30 bg-mc-darker/90 backdrop-blur-md border-b border-gray-700/40">
+    <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
+     <div class="flex items-center gap-3">
+      <button onclick="toggleSidebar()" class="p-2 hover:bg-mc-mid rounded-lg transition-colors"><i data-lucide="menu" class="w-5 h-5"></i></button> <img src="https://i.imgur.com/lBdyggA.png" alt="BC" class="w-8 h-8 rounded hidden sm:block" loading="lazy" onerror="this.style.background='#4ade80';"> <span id="nav-title" class="font-pixel text-xs text-mc-accent hidden sm:block">BayeCraft</span>
+     </div>
+     <div class="flex items-center gap-2">
+      <div id="server-status-badge" class="flex items-center gap-1.5 px-3 py-1.5 bg-mc-mid rounded-full text-xs">
+       <span id="status-dot" class="w-2 h-2 rounded-full bg-gray-500"></span> <span id="status-text" class="text-gray-400">Checking...</span>
+      </div><button id="nav-login-btn" onclick="showLoginModal()" class="px-3 py-1.5 bg-mc-accent/20 text-mc-accent rounded-lg text-xs font-semibold hover:bg-mc-accent/30 transition-colors flex items-center gap-1.5"> <i data-lucide="user" class="w-3.5 h-3.5"></i><span id="nav-login-text">Login</span> </button>
+     </div>
+    </div>
+   </nav><!-- Pages Container -->
+   <div id="pages" class="max-w-6xl mx-auto px-4 py-6">
+    <!-- HOME PAGE -->
+    <section id="page-home" class="space-y-8 fade-in">
+     <!-- Hero -->
+     <div class="relative rounded-2xl overflow-hidden minecraft-border bg-gradient-to-br from-mc-dark via-mc-mid to-mc-dark p-6 sm:p-10">
+      <div class="absolute inset-0 bg-[url('https://i.imgur.com/8Kx3x4Q.jpg')] bg-cover bg-center opacity-10"></div>
+      <div class="relative z-10 space-y-5">
+       <div class="flex items-center gap-3">
+        <img src="https://i.imgur.com/lBdyggA.png" alt="BayeCraft" class="w-14 h-14 rounded-lg float-anim" loading="lazy" onerror="this.style.background='#4ade80';">
+        <div>
+         <h1 id="hero-title" class="font-pixel text-mc-accent text-lg sm:text-xl">BayeCraft</h1>
+         <p class="text-gray-400 text-xs mt-1"><i data-lucide="server" class="w-3 h-3 inline mr-1"></i>Minecraft Survival Server</p>
+        </div>
+       </div>
+       <p id="hero-tagline" class="text-gray-300 text-sm sm:text-base leading-relaxed max-w-2xl">BayeCraft adalah server survival santai dengan banyak fitur custom yang bikin gameplay lebih seru dan nggak ngebosenin. Cocok buat yang mau main survival bareng temen, eksplor dunia, koleksi gear kuat, dan nikmatin fitur unik yang nggak ada di server biasa.</p><!-- Server Info Cards -->
+       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="bg-mc-darker/80 rounded-xl p-4 border border-gray-700/40">
+         <div class="text-xs text-gray-400 mb-1 flex items-center gap-1"><i data-lucide="globe" class="w-3 h-3"></i>Server IP
+         </div>
+         <div class="flex items-center justify-between">
+          <span id="display-ip" class="font-pixel text-[10px] text-white">bayecraft.duckdns.org</span> <button onclick="copyText('bayecraft.duckdns.org','IP')" class="p-1 hover:bg-mc-mid rounded"><i data-lucide="copy" class="w-3.5 h-3.5 text-mc-accent"></i></button>
+         </div>
+        </div>
+        <div class="bg-mc-darker/80 rounded-xl p-4 border border-gray-700/40">
+         <div class="text-xs text-gray-400 mb-1 flex items-center gap-1"><i data-lucide="gamepad2" class="w-3 h-3"></i>Bedrock Port
+         </div>
+         <div class="flex items-center justify-between">
+          <span class="font-pixel text-[10px] text-white">25862</span> <button onclick="copyText('25862','Port Bedrock')" class="p-1 hover:bg-mc-mid rounded"><i data-lucide="copy" class="w-3.5 h-3.5 text-mc-accent"></i></button>
+         </div>
+        </div>
+        <div class="bg-mc-darker/80 rounded-xl p-4 border border-gray-700/40">
+         <div class="text-xs text-gray-400 mb-1 flex items-center gap-1"><i data-lucide="coffee" class="w-3 h-3"></i>Java Port
+         </div>
+         <div class="flex items-center justify-between">
+          <span class="font-pixel text-[10px] text-white">25614</span> <button onclick="copyText('25614','Port Java')" class="p-1 hover:bg-mc-mid rounded"><i data-lucide="copy" class="w-3.5 h-3.5 text-mc-accent"></i></button>
+         </div>
+        </div>
+       </div><!-- Live Status -->
+       <div class="flex flex-wrap items-center gap-3">
+        <div id="player-count" class="bg-mc-mid/80 rounded-lg px-4 py-2 text-sm flex items-center gap-2">
+         <i data-lucide="users" class="w-4 h-4 text-mc-accent"></i> <span id="player-text" class="text-gray-300">Loading...</span>
+        </div>
+        <div id="server-version" class="bg-mc-mid/80 rounded-lg px-4 py-2 text-sm flex items-center gap-2">
+         <i data-lucide="cpu" class="w-4 h-4 text-mc-purple"></i> <span id="version-text" class="text-gray-300">-</span>
+        </div>
+       </div><!-- Quick Menu Shortcuts -->
+       <div class="grid grid-cols-3 gap-2 my-6"><button onclick="navigateTo('ranks')" class="flex flex-col items-center gap-2 p-4 bg-mc-mid hover:bg-mc-surface rounded-xl border border-gray-700/40 transition-all group">
+         <div class="w-10 h-10 rounded-lg bg-mc-accent/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+          <i data-lucide="crown" class="w-5 h-5 text-mc-accent"></i>
+         </div><span class="text-xs font-semibold text-center">Ranks</span> </button> <button onclick="navigateTo('topup')" class="flex flex-col items-center gap-2 p-4 bg-mc-mid hover:bg-mc-surface rounded-xl border border-gray-700/40 transition-all group">
+         <div class="w-10 h-10 rounded-lg bg-mc-gold/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+          <i data-lucide="coins" class="w-5 h-5 text-mc-gold"></i>
+         </div><span class="text-xs font-semibold text-center">Top Up</span> </button> <button onclick="navigateTo('custom')" class="flex flex-col items-center gap-2 p-4 bg-mc-mid hover:bg-mc-surface rounded-xl border border-gray-700/40 transition-all group">
+         <div class="w-10 h-10 rounded-lg bg-mc-purple/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+          <i data-lucide="palette" class="w-5 h-5 text-mc-purple"></i>
+         </div><span class="text-xs font-semibold text-center">Custom</span> </button>
+       </div><!-- Social Buttons -->
+       <div class="flex flex-wrap gap-3">
+        <a href="https://chat.whatsapp.com/BxUz7cddkweGopBONhsclx" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-semibold transition-colors"> <i data-lucide="message-circle" class="w-4 h-4"></i> Join WA Group </a> <a href="https://discord.gg/jFsrkzXjY" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-semibold transition-colors"> <i data-lucide="send" class="w-4 h-4"></i> Join Discord </a>
+       </div><!-- Login Shortcut -->
+       <div id="home-login-card" class="bg-mc-darker/80 rounded-xl p-4 border border-yellow-500/30">
+        <div class="flex items-center gap-3">
+         <div class="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
+          <i data-lucide="lock" class="w-5 h-5 text-yellow-400"></i>
+         </div>
+         <div class="flex-1">
+          <p class="text-sm font-semibold text-yellow-400">Belum Login</p>
+          <p class="text-xs text-gray-400">Login dulu untuk akses Store</p>
+         </div><button onclick="showLoginModal()" class="px-4 py-2 bg-mc-accent text-mc-darker rounded-lg text-sm font-bold hover:bg-green-300 transition-colors">Login</button>
+        </div>
+       </div><!-- Admin Info -->
+       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="bg-mc-darker/80 rounded-xl p-4 border border-gray-700/40 flex items-center gap-3">
+         <div class="w-10 h-10 rounded-lg bg-mc-accent/20 flex items-center justify-center">
+          <i data-lucide="crown" class="w-5 h-5 text-mc-accent"></i>
+         </div>
+         <div>
+          <p class="text-xs text-gray-400">Owner</p>
+          <p class="text-sm font-semibold">banixyz05 / Inab05</p>
+         </div>
+        </div>
+        <div class="bg-mc-darker/80 rounded-xl p-4 border border-gray-700/40 flex items-center gap-3">
+         <div class="w-10 h-10 rounded-lg bg-mc-purple/20 flex items-center justify-center">
+          <i data-lucide="shield" class="w-5 h-5 text-mc-purple"></i>
+         </div>
+         <div>
+          <p class="text-xs text-gray-400">Co-Owner</p>
+          <p class="text-sm font-semibold">SezzV</p>
+         </div>
+        </div>
+       </div>
+      </div>
+     </div>
+    </section><!-- RANKS PAGE -->
+    <section id="page-ranks" class="space-y-6 hidden">
+     <div class="flex items-center gap-3 mb-2">
+      <button onclick="navigateTo('home')" class="p-2 hover:bg-mc-mid rounded-lg"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+      <h2 class="font-pixel text-mc-gold text-sm"><i data-lucide="crown" class="w-4 h-4 inline mr-2"></i>Rank List</h2>
+     </div>
+     <div id="rank-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section><!-- TOPUP PAGE -->
+    <section id="page-topup" class="space-y-6 hidden">
+     <div class="flex items-center gap-3 mb-2">
+      <button onclick="navigateTo('home')" class="p-2 hover:bg-mc-mid rounded-lg"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+      <h2 class="font-pixel text-mc-gold text-sm"><i data-lucide="coins" class="w-4 h-4 inline mr-2"></i>Top Up Money</h2>
+     </div>
+     <div class="bg-mc-dark rounded-2xl p-6 border border-gray-700/40 space-y-5">
+      <p class="text-gray-300 text-sm">Masukkan jumlah uang in-game yang ingin di top up. <strong class="text-mc-accent">10.000 money = Rp1.000</strong></p>
+      <div class="space-y-3">
+       <label for="topup-amount" class="text-sm text-gray-400">Jumlah Money</label> <input id="topup-amount" type="number" min="10000" step="1000" placeholder="Contoh: 50000" class="w-full bg-mc-darker border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-mc-accent focus:outline-none transition-colors" oninput="calcTopup()">
+       <div class="flex items-center justify-between bg-mc-darker/80 rounded-lg px-4 py-3 border border-gray-700/40">
+        <span class="text-gray-400 text-sm">Harga:</span> <span id="topup-price" class="font-pixel text-mc-gold text-sm">Rp0</span>
+       </div><button onclick="submitTopup()" class="w-full py-3 bg-mc-accent text-mc-darker rounded-lg font-bold hover:bg-green-300 transition-colors flex items-center justify-center gap-2"> <i data-lucide="check" class="w-4 h-4"></i> Order Top Up </button>
+      </div><!-- Quick amounts -->
+      <div class="grid grid-cols-3 gap-2">
+       <button onclick="setTopup(10000)" class="py-2 bg-mc-mid hover:bg-mc-surface rounded-lg text-xs text-center transition-colors">10K<br><span class="text-mc-gold">Rp1.000</span></button> <button onclick="setTopup(50000)" class="py-2 bg-mc-mid hover:bg-mc-surface rounded-lg text-xs text-center transition-colors">50K<br><span class="text-mc-gold">Rp5.000</span></button> <button onclick="setTopup(100000)" class="py-2 bg-mc-mid hover:bg-mc-surface rounded-lg text-xs text-center transition-colors">100K<br><span class="text-mc-gold">Rp10.000</span></button> <button onclick="setTopup(250000)" class="py-2 bg-mc-mid hover:bg-mc-surface rounded-lg text-xs text-center transition-colors">250K<br><span class="text-mc-gold">Rp25.000</span></button> <button onclick="setTopup(500000)" class="py-2 bg-mc-mid hover:bg-mc-surface rounded-lg text-xs text-center transition-colors">500K<br><span class="text-mc-gold">Rp50.000</span></button> <button onclick="setTopup(1000000)" class="py-2 bg-mc-mid hover:bg-mc-surface rounded-lg text-xs text-center transition-colors">1M<br><span class="text-mc-gold">Rp100.000</span></button>
+      </div>
+     </div>
+    </section><!-- CUSTOM RANK PAGE -->
+    <section id="page-custom" class="space-y-6 hidden">
+     <div class="flex items-center gap-3 mb-2">
+      <button onclick="navigateTo('home')" class="p-2 hover:bg-mc-mid rounded-lg"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+      <h2 class="font-pixel text-mc-gold text-sm"><i data-lucide="palette" class="w-4 h-4 inline mr-2"></i>Custom Rank</h2>
+     </div>
+     <p class="text-gray-400 text-sm">Pilih fitur yang kamu mau, beli satuan!</p>
+     <div id="custom-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+     <div id="custom-cart" class="bg-mc-dark rounded-2xl p-5 border border-mc-accent/30 sticky bottom-4">
+      <div class="flex items-center justify-between mb-3">
+       <span class="text-sm font-semibold"><i data-lucide="list" class="w-4 h-4 inline mr-2"></i>Fitur Dipilih: <span id="custom-count" class="text-mc-accent">0</span></span> <span class="font-pixel text-mc-gold text-sm">Total: <span id="custom-total">Rp0</span></span>
+      </div><button onclick="submitCustom()" class="w-full py-3 bg-mc-accent text-mc-darker rounded-lg font-bold hover:bg-green-300 transition-colors flex items-center justify-center gap-2"> <i data-lucide="check" class="w-4 h-4"></i> Order Custom Rank </button>
+     </div>
+    </section><!-- CONTACT PAGE -->
+    <section id="page-contact" class="space-y-6 hidden">
+     <div class="flex items-center gap-3 mb-2">
+      <button onclick="navigateTo('home')" class="p-2 hover:bg-mc-mid rounded-lg"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+      <h2 class="font-pixel text-mc-accent text-sm"><i data-lucide="mail" class="w-4 h-4 inline mr-2"></i>Contact</h2>
+     </div>
+     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <a href="https://wa.me/+62858115702000" target="_blank" rel="noopener noreferrer" class="bg-mc-dark rounded-xl p-5 border border-gray-700/40 card-hover flex items-center gap-4">
+       <div class="w-12 h-12 rounded-xl bg-green-600/20 flex items-center justify-center"><i data-lucide="phone" class="w-6 h-6 text-green-400"></i>
+       </div>
+       <div>
+        <p class="text-sm font-semibold">banixyz05 (Owner)</p>
+        <p class="text-xs text-gray-400">+62 858 1157 02000</p>
+       </div></a> <a href="https://wa.me/+6285882322237" target="_blank" rel="noopener noreferrer" class="bg-mc-dark rounded-xl p-5 border border-gray-700/40 card-hover flex items-center gap-4">
+       <div class="w-12 h-12 rounded-xl bg-green-600/20 flex items-center justify-center"><i data-lucide="phone" class="w-6 h-6 text-green-400"></i>
+       </div>
+       <div>
+        <p class="text-sm font-semibold">SezzV (Co-Owner)</p>
+        <p class="text-xs text-gray-400">+62 858 8232 2237</p>
+       </div></a> <a href="https://chat.whatsapp.com/BxUz7cddkweGopBONhsclx" target="_blank" rel="noopener noreferrer" class="bg-mc-dark rounded-xl p-5 border border-gray-700/40 card-hover flex items-center gap-4">
+       <div class="w-12 h-12 rounded-xl bg-green-600/20 flex items-center justify-center"><i data-lucide="message-circle" class="w-6 h-6 text-green-400"></i>
+       </div>
+       <div>
+        <p class="text-sm font-semibold">WA Group BayeCraft</p>
+        <p class="text-xs text-gray-400">Join komunitas</p>
+       </div></a> <a href="https://discord.gg/jFsrkzXjY" target="_blank" rel="noopener noreferrer" class="bg-mc-dark rounded-xl p-5 border border-gray-700/40 card-hover flex items-center gap-4">
+       <div class="w-12 h-12 rounded-xl bg-indigo-600/20 flex items-center justify-center"><i data-lucide="send" class="w-6 h-6 text-indigo-400"></i>
+       </div>
+       <div>
+        <p class="text-sm font-semibold">Discord BayeCraft</p>
+        <p class="text-xs text-gray-400">Join server Discord</p>
+       </div></a>
+     </div>
+    </section>
+   </div><!-- pages -->
+  </div><!-- app-wrapper --> <!-- Login Modal -->
+  <div id="login-modal" class="fixed inset-0 z-[100] hidden">
+   <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeLoginModal()"></div>
+   <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-mc-dark rounded-2xl border border-gray-700/50 p-6 space-y-5">
+    <div class="flex items-center justify-between">
+     <h3 class="font-pixel text-mc-accent text-xs">⛏️ Login Minecraft</h3><button onclick="closeLoginModal()" class="p-1 hover:bg-mc-mid rounded"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="space-y-4">
+     <div>
+      <label for="login-gamertag" class="text-sm text-gray-400 block mb-1">Gamertag</label> <input id="login-gamertag" type="text" placeholder="Masukkan gamertag..." class="w-full bg-mc-darker border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-mc-accent focus:outline-none">
+     </div>
+     <div>
+      <label class="text-sm text-gray-400 block mb-2">Platform</label>
+      <div class="grid grid-cols-2 gap-3">
+       <button id="btn-bedrock" onclick="selectPlatform('bedrock')" class="py-3 rounded-lg border border-gray-600 text-sm font-semibold hover:border-mc-accent transition-colors text-center">🪨 Bedrock</button> <button id="btn-java" onclick="selectPlatform('java')" class="py-3 rounded-lg border border-gray-600 text-sm font-semibold hover:border-mc-accent transition-colors text-center">☕ Java</button>
+      </div>
+     </div>
+     <div id="login-preview" class="bg-mc-darker/80 rounded-lg px-4 py-3 border border-gray-700/40 hidden">
+      <span class="text-xs text-gray-400">Login sebagai:</span> <span id="login-preview-name" class="text-sm text-mc-accent font-semibold ml-2"></span>
+     </div><button onclick="doLogin()" class="w-full py-3 bg-mc-accent text-mc-darker rounded-lg font-bold hover:bg-green-300 transition-colors">Login</button>
+    </div>
+   </div>
+  </div><!-- Rank Detail Modal -->
+  <div id="rank-modal" class="fixed inset-0 z-[100] hidden">
+   <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeRankModal()"></div>
+   <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-lg bg-mc-dark rounded-2xl border border-gray-700/50 p-6 max-h-[80%] overflow-auto scrollbar-hide">
+    <div class="flex items-center justify-between mb-4">
+     <h3 id="rank-modal-title" class="font-pixel text-sm"></h3><button onclick="closeRankModal()" class="p-1 hover:bg-mc-mid rounded"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div id="rank-modal-body" class="space-y-3"></div><button id="rank-modal-buy" onclick="showAdminSelectRank()" class="w-full mt-5 py-3 bg-mc-accent text-mc-darker rounded-lg font-bold hover:bg-green-300 transition-colors flex items-center justify-center gap-2"> <i data-lucide="shopping-cart" class="w-4 h-4"></i> <span id="rank-buy-text">Beli Rank</span> </button>
+   </div>
+  </div><!-- Admin Selection Modal -->
+  <div id="admin-select-modal" class="fixed inset-0 z-[100] hidden">
+   <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeAdminSelect()"></div>
+   <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-mc-dark rounded-2xl border border-gray-700/50 p-6 space-y-5">
+    <div class="flex items-center justify-between">
+     <h3 class="font-pixel text-mc-accent text-xs">Pilih Admin</h3><button onclick="closeAdminSelect()" class="p-1 hover:bg-mc-mid rounded"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <p class="text-sm text-gray-300">Pilih admin mana yang ingin dihubungi untuk konfirmasi pembayaran:</p>
+    <div class="space-y-3"><button onclick="selectAdminAndOrder('owner')" class="w-full flex items-center gap-3 p-4 bg-mc-darker rounded-lg border border-gray-700/40 hover:border-mc-accent hover:bg-mc-mid transition-all">
+      <div class="w-12 h-12 rounded-lg bg-mc-accent/20 flex items-center justify-center flex-shrink-0">
+       <i data-lucide="crown" class="w-6 h-6 text-mc-accent"></i>
+      </div>
+      <div class="flex-1 text-left">
+       <p class="text-sm font-semibold text-white">banixyz05 (Owner)</p>
+       <p class="text-xs text-gray-400">0858 1157 02000</p>
+      </div><i data-lucide="chevron-right" class="w-5 h-5 text-gray-500 flex-shrink-0"></i> </button> <button onclick="selectAdminAndOrder('coowner')" class="w-full flex items-center gap-3 p-4 bg-mc-darker rounded-lg border border-gray-700/40 hover:border-mc-purple hover:bg-mc-mid transition-all">
+      <div class="w-12 h-12 rounded-lg bg-mc-purple/20 flex items-center justify-center flex-shrink-0">
+       <i data-lucide="shield" class="w-6 h-6 text-mc-purple"></i>
+      </div>
+      <div class="flex-1 text-left">
+       <p class="text-sm font-semibold text-white">SezzV (Co-Owner)</p>
+       <p class="text-xs text-gray-400">0858 8232 2237</p>
+      </div><i data-lucide="chevron-right" class="w-5 h-5 text-gray-500 flex-shrink-0"></i> </button>
+    </div>
+   </div>
+  </div><!-- Order Confirm Modal -->
+  <div id="order-modal" class="fixed inset-0 z-[100] hidden">
+   <div class="absolute inset-0 bg-black/70 backdrop-filter-sm" onclick="closeOrderModal()"></div>
+   <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-mc-dark rounded-2xl border border-mc-accent/30 p-6 space-y-4">
+    <div class="text-center">
+     <div class="w-16 h-16 mx-auto rounded-full bg-mc-accent/20 flex items-center justify-center mb-3">
+      <i data-lucide="check-circle" class="w-8 h-8 text-mc-accent"></i>
+     </div>
+     <h3 class="font-pixel text-mc-accent text-xs mb-2">Order Berhasil!</h3>
+     <p id="order-summary" class="text-sm text-gray-300 mb-2"></p>
+     <div id="admin-selected-info" class="bg-mc-mid rounded-lg p-3 text-sm mb-3"></div>
+    </div>
+    <div class="space-y-3">
+     <div class="bg-mc-darker/80 rounded-xl p-4 border border-gray-700/40">
+      <p class="text-xs text-gray-400 font-semibold mb-2">Pesan akan dikirim ke WhatsApp admin.</p>
+      <p class="text-xs text-gray-300">Klik tombol di bawah untuk mengirim pesan otomatis.</p>
+     </div>
+    </div><button id="wa-send-btn" onclick="sendWhatsApp()" class="w-full py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"> <i data-lucide="message-circle" class="w-4 h-4"></i> Kirim ke WhatsApp </button><button onclick="closeOrderModal()" class="w-full py-2.5 bg-mc-mid hover:bg-mc-surface rounded-lg text-sm font-semibold transition-colors">Tutup</button>
+   </div>
+  </div>
+  <script>
+// ===== STATE =====
+let currentUser = null;
+let selectedPlatform = null;
+let selectedRank = null;
+let customSelected = new Set();
+let allOrders = [];
+let pendingOrder = null;
+let selectedAdmin = null;
+
+// Admin info
+const ADMIN_INFO = {
+  owner: {
+    name: 'banixyz05',
+    wa: '62858115702000',
+    display: '0858 1157 02000',
+    role: 'Owner'
+  },
+  coowner: {
+    name: 'SezzV',
+    wa: '6285882322237',
+    display: '0858 8232 2237',
+    role: 'Co-Owner'
+  }
+};
+
+// ===== RANK DATA =====
+const ranks = [
+  {id:'bayers',name:'BAYERS',emoji:'🟢',color:'#4ade80',price:10000,totalFeatures:4,
+   features:['Vault','Hat','Fly','Feed'],bonus:'Bonus key gacha & money'},
+  {id:'bayers_plus',name:'BAYERS+',emoji:'🔵',color:'#3b82f6',price:16000,totalFeatures:8,
+   features:['Semua fitur BAYERS','+3 Vault','Heal','Anvil','Speed'],bonus:'Bonus key & money 2x'},
+  {id:'ascension',name:'ASCENSION',emoji:'🟣',color:'#a855f7',price:25000,totalFeatures:14,
+   features:['Semua fitur BAYERS+','Nick','Repair','Weather Control','Water Breathing','+1 Vault'],bonus:'Bonus key & money 2x BAYERS+'},
+  {id:'supreme',name:'SUPREME',emoji:'🔴',color:'#ef4444',price:35000,totalFeatures:18,
+   features:['Semua fitur ASCENSION','+2 Vault','Time Control','Night Vision','Vanish'],bonus:'Bonus key & money 2x ASCENSION'},
+  {id:'zenith',name:'ZENITH',emoji:'🟡',color:'#fbbf24',price:50000,totalFeatures:20,
+   features:['Semua fitur SUPREME','Enchant','Size Control'],bonus:'Bonus key & money 2x SUPREME'}
+];
+
+// ===== CUSTOM FEATURES =====
+const customFeatures = [
+  {id:'vault',name:'Vault',price:4000,icon:'📦'},
+  {id:'hat',name:'Hat',price:4000,icon:'🎩'},
+  {id:'feed',name:'Feed',price:4000,icon:'🍖'},
+  {id:'heal',name:'Heal',price:4000,icon:'❤️'},
+  {id:'anvil',name:'Anvil',price:4000,icon:'🔨'},
+  {id:'speed',name:'Speed',price:4000,icon:'⚡'},
+  {id:'nick',name:'Nick',price:4000,icon:'📝'},
+  {id:'repair',name:'Repair',price:5000,icon:'🔧'},
+  {id:'vanish',name:'Vanish',price:5000,icon:'👻'},
+  {id:'weather',name:'Weather Control',price:6000,icon:'🌦️'},
+  {id:'waterbreath',name:'Water Breathing',price:6000,icon:'🫧'},
+  {id:'timectrl',name:'Time Control',price:6000,icon:'⏰'},
+  {id:'nightvision',name:'Night Vision',price:7000,icon:'👁️'},
+  {id:'fly',name:'Fly',price:8000,icon:'🕊️'},
+  {id:'sizechanger',name:'Size Control',price:8000,icon:'📐'},
+  {id:'enchant',name:'Enchant',price:8500,icon:'✨'}
+].sort((a,b)=>a.price-b.price);
+
+// ===== NAVIGATION =====
+function navigateTo(page) {
+  if(['ranks','topup','custom'].includes(page) && !currentUser) {
+    showLoginModal();
+    showToast('Login dulu sebelum akses Store!');
+    return;
+  }
+  document.querySelectorAll('[id^="page-"]').forEach(el=>el.classList.add('hidden'));
+  const target = document.getElementById('page-'+page);
+  if(target){target.classList.remove('hidden');target.classList.add('fade-in');}
+  if(page==='ranks') renderRanks();
+  if(page==='custom') renderCustom();
+}
+
+// ===== SIDEBAR =====
+function toggleSidebar(){
+  const s=document.getElementById('sidebar'),o=document.getElementById('sidebar-overlay');
+  const open=s.classList.contains('-translate-x-full');
+  s.classList.toggle('-translate-x-full',!open);
+  o.classList.toggle('hidden',!open);
+}
+
+// ===== TOAST =====
+function showToast(msg){
+  const t=document.getElementById('toast'),m=document.getElementById('toast-msg');
+  m.textContent=msg;t.classList.remove('hidden');t.classList.add('toast-show');
+  setTimeout(()=>{t.classList.add('hidden');t.classList.remove('toast-show')},2500);
+}
+
+// ===== COPY =====
+function copyText(text,label){
+  navigator.clipboard.writeText(text).then(()=>showToast(label+' disalin!')).catch(()=>showToast('Gagal copy'));
+}
+
+// ===== LOGIN =====
+function showLoginModal(){document.getElementById('login-modal').classList.remove('hidden');lucide.createIcons();}
+function closeLoginModal(){document.getElementById('login-modal').classList.add('hidden');}
+
+function selectPlatform(p){
+  selectedPlatform=p;
+  document.getElementById('btn-bedrock').className='py-3 rounded-lg border text-sm font-semibold transition-colors text-center '+(p==='bedrock'?'border-mc-accent bg-mc-accent/20 text-mc-accent':'border-gray-600 hover:border-mc-accent');
+  document.getElementById('btn-java').className='py-3 rounded-lg border text-sm font-semibold transition-colors text-center '+(p==='java'?'border-mc-accent bg-mc-accent/20 text-mc-accent':'border-gray-600 hover:border-mc-accent');
+  updateLoginPreview();
+}
+
+function updateLoginPreview(){
+  const gt=document.getElementById('login-gamertag').value.trim();
+  const prev=document.getElementById('login-preview');
+  const name=document.getElementById('login-preview-name');
+  if(gt&&selectedPlatform){
+    prev.classList.remove('hidden');
+    name.textContent=selectedPlatform==='bedrock'?'.'+gt:gt;
+  } else prev.classList.add('hidden');
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('login-gamertag').addEventListener('input',updateLoginPreview);
+});
+
+function doLogin(){
+  const gt=document.getElementById('login-gamertag').value.trim();
+  if(!gt){showToast('Masukkan gamertag!');return;}
+  if(!selectedPlatform){showToast('Pilih platform!');return;}
+  const displayName=selectedPlatform==='bedrock'?'.'+gt:gt;
+  currentUser={gamertag:gt,platform:selectedPlatform,displayName};
+  closeLoginModal();
+  updateLoginUI();
+  showToast('Welcome, '+displayName+'!');
+}
+
+function updateLoginUI(){
+  const navBtn=document.getElementById('nav-login-btn');
+  const navText=document.getElementById('nav-login-text');
+  const homeCard=document.getElementById('home-login-card');
+  const sideStatus=document.getElementById('sidebar-login-status');
+  if(currentUser){
+    navText.textContent=currentUser.displayName;
+    navBtn.onclick=()=>{currentUser=null;selectedPlatform=null;updateLoginUI();showToast('Logged out');};
+    homeCard.innerHTML=`<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-lg bg-mc-accent/20 flex items-center justify-center"><i data-lucide="user-check" class="w-5 h-5 text-mc-accent"></i></div><div class="flex-1"><p class="text-sm font-semibold text-mc-accent">${currentUser.displayName}</p><p class="text-xs text-gray-400">${currentUser.platform==='bedrock'?'Bedrock':'Java'} Player</p></div><button onclick="currentUser=null;selectedPlatform=null;updateLoginUI();showToast('Logged out')" class="px-3 py-1.5 bg-mc-mid text-gray-300 rounded-lg text-xs hover:bg-mc-surface transition-colors">Logout</button></div>`;
+    homeCard.className='bg-mc-darker/80 rounded-xl p-4 border border-mc-accent/30';
+    sideStatus.innerHTML='<span class="text-mc-accent">'+currentUser.displayName+'</span>';
+    lucide.createIcons();
+  } else {
+    navText.textContent='Login';
+    navBtn.onclick=showLoginModal;
+    homeCard.innerHTML=`<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center"><i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-400"></i></div><div class="flex-1"><p class="text-sm font-semibold text-yellow-400">Belum Login</p><p class="text-xs text-gray-400">Login dulu untuk akses Store</p></div><button onclick="showLoginModal()" class="px-4 py-2 bg-mc-accent text-mc-darker rounded-lg text-sm font-bold hover:bg-green-300 transition-colors">Login</button></div>`;
+    homeCard.className='bg-mc-darker/80 rounded-xl p-4 border border-yellow-500/30';
+    sideStatus.innerHTML='<span class="text-yellow-400">Belum login</span>';
+    lucide.createIcons();
+  }
+}
+
+// ===== RANKS =====
+function renderRanks(){
+  const grid=document.getElementById('rank-grid');
+  grid.innerHTML=ranks.map(r=>`
+    <div class="bg-mc-dark rounded-xl p-5 border border-gray-700/40 card-hover cursor-pointer" onclick="openRankDetail('${r.id}')" style="border-top:3px solid ${r.color}">
+      <div class="text-2xl mb-2">${r.emoji}</div>
+      <h3 class="font-pixel text-xs mb-1" style="color:${r.color}">${r.name}</h3>
+      <p class="font-pixel text-mc-gold text-[10px] mb-3">Rp${r.price.toLocaleString('id')}</p>
+      <p class="text-xs text-gray-400">${r.totalFeatures} Fitur</p>
+      <div class="mt-3 flex flex-wrap gap-1">${r.features.slice(0,3).map(f=>`<span class="px-2 py-0.5 bg-mc-mid rounded text-[10px] text-gray-300">${f}</span>`).join('')}${r.features.length>3?`<span class="px-2 py-0.5 bg-mc-mid rounded text-[10px] text-gray-400">+${r.features.length-3}</span>`:''}</div>
+    </div>
+  `).join('');
+}
+
+function openRankDetail(id){
+  const r=ranks.find(x=>x.id===id);if(!r)return;
+  selectedRank=r;
+  document.getElementById('rank-modal-title').innerHTML=r.emoji+' '+r.name;
+  document.getElementById('rank-modal-title').style.color=r.color;
+  document.getElementById('rank-modal-body').innerHTML=`
+    <div class="bg-mc-darker/80 rounded-lg p-4 border border-gray-700/40">
+      <div class="flex justify-between items-center mb-3"><span class="text-sm text-gray-400">Harga</span><span class="font-pixel text-mc-gold text-sm">Rp${r.price.toLocaleString('id')}</span></div>
+      <div class="flex justify-between items-center"><span class="text-sm text-gray-400">Total Fitur</span><span class="text-sm font-semibold">${r.totalFeatures}</span></div>
+    </div>
+    <div class="space-y-2"><p class="text-sm font-semibold text-gray-300">✨ Fitur:</p>${r.features.map(f=>`<div class="flex items-center gap-2 text-sm text-gray-300"><span class="w-1.5 h-1.5 rounded-full" style="background:${r.color}"></span>${f}</div>`).join('')}</div>
+    <div class="bg-mc-gold/10 rounded-lg p-3 border border-mc-gold/20"><p class="text-sm text-mc-gold">🎁 ${r.bonus}</p></div>
+  `;
+  document.getElementById('rank-buy-text').textContent='Beli '+r.name+' - Rp'+r.price.toLocaleString('id');
+  document.getElementById('rank-modal').classList.remove('hidden');
+  lucide.createIcons();
+}
+function closeRankModal(){document.getElementById('rank-modal').classList.add('hidden');selectedRank=null;}
+
+function showAdminSelectRank(){
+  if(!selectedRank||!currentUser)return;
+  pendingOrder={type:'rank',rankData:selectedRank};
+  document.getElementById('admin-select-modal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+// ===== TOP UP =====
+function calcTopup(){
+  const amt=parseInt(document.getElementById('topup-amount').value)||0;
+  const price=Math.max(0,Math.floor(amt/10)*1);
+  document.getElementById('topup-price').textContent='Rp'+price.toLocaleString('id');
+}
+function setTopup(val){document.getElementById('topup-amount').value=val;calcTopup();}
+async function submitTopup(){
+  if(!currentUser){showLoginModal();return;}
+  const amt=parseInt(document.getElementById('topup-amount').value)||0;
+  if(amt<10000){showToast('Minimal 10.000 money!');return;}
+  const price=Math.floor(amt/10);
+  pendingOrder={type:'topup',amount:amt,price:price};
+  document.getElementById('admin-select-modal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+// ===== CUSTOM RANK =====
+function renderCustom(){
+  const grid=document.getElementById('custom-grid');
+  grid.innerHTML=customFeatures.map(f=>{
+    const sel=customSelected.has(f.id);
+    return `<div class="bg-mc-dark rounded-xl p-4 border cursor-pointer transition-all ${sel?'border-mc-accent bg-mc-accent/10':'border-gray-700/40 hover:border-gray-500'}" onclick="toggleCustom('${f.id}')">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3"><span class="text-xl">${f.icon}</span><div><p class="text-sm font-semibold">${f.name}</p><p class="font-pixel text-[10px] text-mc-gold">Rp${f.price.toLocaleString('id')}</p></div></div>
+        <div class="w-6 h-6 rounded-md border-2 flex items-center justify-center ${sel?'border-mc-accent bg-mc-accent':'border-gray-600'}">${sel?'<svg class="w-4 h-4 text-mc-darker" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>':''}</div>
+      </div>
+    </div>`;
+  }).join('');
+  updateCustomCart();
+}
+function toggleCustom(id){
+  if(customSelected.has(id))customSelected.delete(id);else customSelected.add(id);
+  renderCustom();
+}
+function updateCustomCart(){
+  let total=0;customSelected.forEach(id=>{const f=customFeatures.find(x=>x.id===id);if(f)total+=f.price;});
+  document.getElementById('custom-count').textContent=customSelected.size;
+  document.getElementById('custom-total').textContent='Rp'+total.toLocaleString('id');
+}
+async function submitCustom(){
+  if(!currentUser){showLoginModal();return;}
+  if(customSelected.size===0){showToast('Pilih minimal 1 fitur!');return;}
+  let total=0;const names=[];
+  customSelected.forEach(id=>{const f=customFeatures.find(x=>x.id===id);if(f){total+=f.price;names.push(f.name);}});
+  pendingOrder={type:'custom',items:names,price:total};
+  document.getElementById('admin-select-modal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function closeOrderModal(){
+  document.getElementById('order-modal').classList.add('hidden');
+  pendingOrder=null;
+  selectedAdmin=null;
+}
+
+// ===== ADMIN SELECTION =====
+function closeAdminSelect(){
+  document.getElementById('admin-select-modal').classList.add('hidden');
+}
+
+function selectAdminAndOrder(admin){
+  selectedAdmin=admin;
+  closeAdminSelect();
+  proceedOrder(admin);
+}
+
+function sendWhatsApp(){
+  if(!selectedAdmin||!pendingOrder)return;
+  
+  const adminData=ADMIN_INFO[selectedAdmin];
+  let message='Halo Admin '+adminData.name+' 🙏\n\n';
+  message+='Nama Player: '+currentUser.displayName+'\n';
+  message+='Platform: '+(currentUser.platform==='bedrock'?'Bedrock':'Java')+'\n\n';
+  message+='─────────────────\n';
+  
+  if(pendingOrder.type==='rank'){
+    const rank=pendingOrder.rankData;
+    message+=`Pembelian: ${rank.name}\n`;
+    message+=`Harga: Rp${rank.price.toLocaleString('id')}\n`;
+  } else if(pendingOrder.type==='topup'){
+    message+=`Pembelian: Top Up ${pendingOrder.amount.toLocaleString('id')} money\n`;
+    message+=`Harga: Rp${pendingOrder.price.toLocaleString('id')}\n`;
+  } else if(pendingOrder.type==='custom'){
+    message+=`Pembelian: Custom Rank\n`;
+    message+=`Fitur: ${pendingOrder.items.join(', ')}\n`;
+    message+=`Harga: Rp${pendingOrder.price.toLocaleString('id')}\n`;
+  }
+  
+  message+='─────────────────\n\n';
+  message+='Tolong proseskan pembayaran. Terima kasih! 🙏';
+  
+  const waUrl='https://wa.me/'+adminData.wa+'?text='+encodeURIComponent(message);
+  window.open(waUrl,'_blank');
+}
+
+async function proceedOrder(admin){
+  if(!pendingOrder||!currentUser)return;
+  
+  if(allOrders.length>=999){
+    showToast('Limit order tercapai!');
+    return;
+  }
+  
+  let orderData={};
+  let summary='';
+  
+  if(pendingOrder.type==='rank'){
+    const rank=pendingOrder.rankData;
+    orderData={
+      type:'rank',
+      gamertag:currentUser.displayName,
+      platform:currentUser.platform,
+      items:rank.name,
+      total_price:rank.price,
+      status:'pending',
+      created_at:new Date().toISOString()
+    };
+    summary=`${currentUser.displayName} - ${rank.name} (Rp${rank.price.toLocaleString('id')})`;
+  } else if(pendingOrder.type==='topup'){
+    orderData={
+      type:'topup',
+      gamertag:currentUser.displayName,
+      platform:currentUser.platform,
+      items:pendingOrder.amount.toLocaleString('id')+' money',
+      total_price:pendingOrder.price,
+      status:'pending',
+      created_at:new Date().toISOString()
+    };
+    summary=`${currentUser.displayName} - Top Up ${pendingOrder.amount.toLocaleString('id')} money (Rp${pendingOrder.price.toLocaleString('id')})`;
+  } else if(pendingOrder.type==='custom'){
+    orderData={
+      type:'custom',
+      gamertag:currentUser.displayName,
+      platform:currentUser.platform,
+      items:pendingOrder.items.join(', '),
+      total_price:pendingOrder.price,
+      status:'pending',
+      created_at:new Date().toISOString()
+    };
+    summary=`${currentUser.displayName} - Custom: ${pendingOrder.items.join(', ')} (Rp${pendingOrder.price.toLocaleString('id')})`;
+  }
+  
+  const result=await window.dataSdk.create(orderData);
+  
+  if(result.isOk){
+    document.getElementById('order-summary').textContent=summary;
+    
+    const adminData=ADMIN_INFO[admin];
+    document.getElementById('admin-selected-info').innerHTML=`
+      <p class="font-semibold text-white">${adminData.name} (${adminData.role})</p>
+      <p class="text-xs text-gray-400">${adminData.display}</p>
+    `;
+    
+    document.getElementById('order-modal').classList.remove('hidden');
+    
+    if(pendingOrder.type==='rank'){
+      closeRankModal();
+    } else if(pendingOrder.type==='topup'){
+      document.getElementById('topup-amount').value='';
+      calcTopup();
+    } else if(pendingOrder.type==='custom'){
+      customSelected.clear();
+      renderCustom();
+    }
+    
+    lucide.createIcons();
+  } else {
+    showToast('Gagal membuat order');
+  }
+}
+
+// ===== SERVER STATUS =====
+async function fetchServerStatus(){
+  try{
+    const res=await fetch('https://api.mcstatus.io/v2/status/bedrock/bayecraft.duckdns.org:25862');
+    const data=await res.json();
+    const dot=document.getElementById('status-dot');
+    const txt=document.getElementById('status-text');
+    const ptxt=document.getElementById('player-text');
+    const vtxt=document.getElementById('version-text');
+    if(data.online){
+      dot.className='w-2 h-2 rounded-full bg-mc-accent pulse-glow';
+      txt.textContent='Online';txt.className='text-mc-accent';
+      ptxt.textContent=(data.players?.online||0)+'/'+(data.players?.max||0)+' Players';
+      vtxt.textContent=data.version?.name||'Bedrock';
+    } else {
+      dot.className='w-2 h-2 rounded-full bg-red-500';
+      txt.textContent='Offline';txt.className='text-red-400';
+      ptxt.textContent='Server Offline';
+    }
+  }catch(e){
+    document.getElementById('status-text').textContent='Error';
+  }
+}
+
+// ===== DATA SDK =====
+const dataHandler={
+  onDataChanged(data){allOrders=data;}
+};
+
+// ===== ELEMENT SDK =====
+const defaultConfig={
+  server_name:'BayeCraft',
+  tagline:'BayeCraft adalah server survival santai dengan banyak fitur custom yang bikin gameplay lebih seru dan nggak ngebosenin. Cocok buat yang mau main survival bareng temen, eksplor dunia, koleksi gear kuat, dan nikmatin fitur unik yang nggak ada di server biasa.',
+  ip_address:'bayecraft.duckdns.org',
+  background_color:'#0f0f1a',
+  surface_color:'#1a1a2e',
+  text_color:'#e5e7eb',
+  primary_action_color:'#4ade80',
+  secondary_action_color:'#fbbf24',
+  font_family:'Rajdhani',
+  font_size:16
+};
+
+function applyConfig(config){
+  const bg=config.background_color||defaultConfig.background_color;
+  const sf=config.surface_color||defaultConfig.surface_color;
+  const tx=config.text_color||defaultConfig.text_color;
+  const pa=config.primary_action_color||defaultConfig.primary_action_color;
+  const sa=config.secondary_action_color||defaultConfig.secondary_action_color;
+  const ff=config.font_family||defaultConfig.font_family;
+  const fs=config.font_size||defaultConfig.font_size;
+
+  document.body.style.backgroundColor=bg;
+  document.body.style.color=tx;
+  document.body.style.fontFamily=ff+', Rajdhani, sans-serif';
+  document.body.style.fontSize=fs+'px';
+
+  document.querySelectorAll('.bg-mc-dark').forEach(el=>el.style.backgroundColor=sf);
+
+  const heroTitle=document.getElementById('hero-title');
+  const navTitle=document.getElementById('nav-title');
+  if(heroTitle){heroTitle.textContent=config.server_name||defaultConfig.server_name;heroTitle.style.color=pa;heroTitle.style.fontSize=(fs*1.5)+'px';}
+  if(navTitle){navTitle.textContent=config.server_name||defaultConfig.server_name;navTitle.style.color=pa;}
+
+  const tagline=document.getElementById('hero-tagline');
+  if(tagline){tagline.textContent=config.tagline||defaultConfig.tagline;tagline.style.color=tx;tagline.style.fontSize=(fs*0.9)+'px';}
+
+  const ip=document.getElementById('display-ip');
+  if(ip)ip.textContent=config.ip_address||defaultConfig.ip_address;
+
+  document.querySelectorAll('.font-pixel').forEach(el=>{
+    if(!el.closest('#rank-modal')&&!el.id)el.style.color=pa;
+  });
+}
+
+if(window.elementSdk){
+  window.elementSdk.init({
+    defaultConfig,
+    onConfigChange:async(config)=>applyConfig(config),
+    mapToCapabilities:(config)=>({
+      recolorables:[
+        {get:()=>config.background_color||defaultConfig.background_color,set:v=>{config.background_color=v;window.elementSdk.setConfig({background_color:v})}},
+        {get:()=>config.surface_color||defaultConfig.surface_color,set:v=>{config.surface_color=v;window.elementSdk.setConfig({surface_color:v})}},
+        {get:()=>config.text_color||defaultConfig.text_color,set:v=>{config.text_color=v;window.elementSdk.setConfig({text_color:v})}},
+        {get:()=>config.primary_action_color||defaultConfig.primary_action_color,set:v=>{config.primary_action_color=v;window.elementSdk.setConfig({primary_action_color:v})}},
+        {get:()=>config.secondary_action_color||defaultConfig.secondary_action_color,set:v=>{config.secondary_action_color=v;window.elementSdk.setConfig({secondary_action_color:v})}}
+      ],
+      borderables:[],
+      fontEditable:{get:()=>config.font_family||defaultConfig.font_family,set:v=>{config.font_family=v;window.elementSdk.setConfig({font_family:v})}},
+      fontSizeable:{get:()=>config.font_size||defaultConfig.font_size,set:v=>{config.font_size=v;window.elementSdk.setConfig({font_size:v})}}
+    }),
+    mapToEditPanelValues:(config)=>new Map([
+      ['server_name',config.server_name||defaultConfig.server_name],
+      ['tagline',config.tagline||defaultConfig.tagline],
+      ['ip_address',config.ip_address||defaultConfig.ip_address]
+    ])
+  });
+}
+
+// ===== INIT =====
+(async()=>{
+  const initResult=await window.dataSdk.init(dataHandler);
+  if(!initResult.isOk)console.error('Data SDK init failed');
+  fetchServerStatus();
+  setInterval(fetchServerStatus,60000);
+  updateLoginUI();
+  lucide.createIcons();
+})();
+</script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9f7015a535161bdd',t:'MTc3Nzk4NzY2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
